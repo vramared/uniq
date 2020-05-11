@@ -1,6 +1,6 @@
 package main
 
-imports (
+import (
 	"fmt"
 )
 
