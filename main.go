@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"uniq/pkg/utils"
 )
@@ -29,20 +28,19 @@ func processFlags() *flags {
 	return &flags{*count, *repeated, *unique}
 }
 
-func validateOpts(f *flags) bool {
-	if (f.count && f.repeated) || (f.count && f.unique) || (f.repeated && f.unique) {
+func validateOpts(opts *flags) bool {
+	if (opts.count && opts.repeated) || (opts.count && opts.unique) || (opts.repeated && opts.unique) {
 		return false
 	}
 	return true
 }
 
-func output(f *flags, counter int, line string) string {
-	res := ""
-	if f.count {
-		res += "   " + strconv.Itoa(counter) + " "
+func output(out *os.File, opts *flags, counter int, line string) {
+	if opts.count {
+		fmt.Fprintf(out, "\t%d %s\n", counter, line)
+	} else if (opts.repeated && counter > 1) || (opts.unique && counter == 1) {
+		fmt.Fprintf(out, "%s\n", line)
 	}
-	res += line
-	return res
 }
 
 func handleFiles(args []string) (*os.File, *os.File) {
@@ -76,11 +74,11 @@ func handleFiles(args []string) (*os.File, *os.File) {
 func main() {
 	opts := processFlags()
 	if !validateOpts(opts) {
-		fmt.Println(usage)
+		fmt.Fprintln(os.Stderr, usage)
 		return
 	}
-	args := os.Args[1:]
 
+	args := os.Args[1:]
 	in, out := handleFiles(args[utils.Max(0, len(args)-2):])
 
 	scanner := bufio.NewScanner(in)
@@ -88,15 +86,15 @@ func main() {
 	counter := 0
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.Compare(line, prev) != 0 && strings.Compare(prev, "") != 0 {
-			fmt.Fprintln(out, output(opts, counter, prev))
+		if strings.Compare(line, prev) != 0 && len(prev) != 0 {
+			output(out, opts, counter, prev)
 			counter = 1
 		} else {
 			counter++
 		}
 		prev = line
 	}
-	fmt.Fprintln(out, output(opts, counter, prev))
+	output(out, opts, counter, prev)
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading stderr: ", err)
 	}
