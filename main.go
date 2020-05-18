@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"uniq/pkg/utils"
+	"uniq/utils"
 )
 
 const (
