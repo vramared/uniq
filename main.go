@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	usage  = "usage: goniq [-c | -d | -u] [-i] [-f fields] [-s chars] [input [output]]"
+	usage  = "usage: goniq [-c | -d | -u] [-i] [input [output]]"
 	hyphen = "-"
 )
 
@@ -71,17 +71,7 @@ func handleFiles(args []string) (*os.File, *os.File) {
 	return input, output
 }
 
-func main() {
-	opts := processFlags()
-	if !validateOpts(opts) {
-		fmt.Fprintln(os.Stderr, usage)
-		return
-	}
-
-	args := os.Args[1:]
-	in, out := handleFiles(args[utils.Max(0, len(args)-2):])
-
-	scanner := bufio.NewScanner(in)
+func uniq(scanner *bufio.Scanner, opts *flags, out *os.File) {
 	prev := ""
 	counter := 0
 	for scanner.Scan() {
@@ -98,4 +88,16 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading stderr: ", err)
 	}
+}
+
+func main() {
+	opts := processFlags()
+	if !validateOpts(opts) {
+		fmt.Fprintln(os.Stderr, usage)
+		return
+	}
+	args := os.Args[1:]
+	in, out := handleFiles(args[utils.Max(0, len(args)-2):])
+	scanner := bufio.NewScanner(in)
+	uniq(scanner, opts, out)
 }
